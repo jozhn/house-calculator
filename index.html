@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>房贷计算器</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .result-table {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <h1 class="text-center mb-4">房贷计算器</h1>
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body">
+                        <form id="mortgageForm">
+                            <div class="card mb-3">
+                                <div class="card-header">公积金贷款</div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label for="providentLoanAmount" class="form-label">贷款总额（元）</label>
+                                        <input type="number" class="form-control" id="providentLoanAmount" value="0" min="0" step="10000">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="providentInterestRate" class="form-label">年利率（%）</label>
+                                        <input type="number" class="form-control" id="providentInterestRate" value="0" min="0" step="0.01">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card mb-3">
+                                <div class="card-header">商业贷款</div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label for="commercialLoanAmount" class="form-label">贷款总额（元）</label>
+                                        <input type="number" class="form-control" id="commercialLoanAmount" value="0" min="0" step="10000">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="commercialInterestRate" class="form-label">年利率（%）</label>
+                                        <input type="number" class="form-control" id="commercialInterestRate" value="0" min="0" step="0.01">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="loanYears" class="form-label">贷款年限（年）</label>
+                                <input type="number" class="form-control" id="loanYears" required min="1" max="30">
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary">计算</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="mt-4" id="results" style="display: none;">
+                    <ul class="nav nav-tabs" id="resultTabs">
+                        <li class="nav-item">
+                            <a class="nav-link active" data-bs-toggle="tab" href="#equalPayment">等额本息</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#equalPrincipal">等额本金</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#interestDiff">利息对比</a>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content mt-3">
+                        <div class="tab-pane fade show active" id="equalPayment">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">等额本息还款详情</h5>
+                                    <div class="result-table">
+                                        <table class="table table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>期数</th>
+                                                    <th>月供（元）</th>
+                                                    <th>本金（元）</th>
+                                                    <th>利息（元）</th>
+                                                    <th>剩余本金（元）</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="equalPaymentTable"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="equalPrincipal">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">等额本金还款详情</h5>
+                                    <div class="result-table">
+                                        <table class="table table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>期数</th>
+                                                    <th>月供（元）</th>
+                                                    <th>本金（元）</th>
+                                                    <th>利息（元）</th>
+                                                    <th>剩余本金（元）</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="equalPrincipalTable"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="interestDiff">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">利息差额对比</h5>
+                                    <div class="result-table">
+                                        <table class="table table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>期数</th>
+                                                    <th>等额本息累计利息（元）</th>
+                                                    <th>等额本金累计利息（元）</th>
+                                                    <th>利息差额（元）</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="interestDiffTable"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('mortgageForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const providentLoanAmount = parseFloat(document.getElementById('providentLoanAmount').value) || 0;
+            const providentYearRate = parseFloat(document.getElementById('providentInterestRate').value) / 100 || 0;
+            const commercialLoanAmount = parseFloat(document.getElementById('commercialLoanAmount').value) || 0;
+            const commercialYearRate = parseFloat(document.getElementById('commercialInterestRate').value) / 100 || 0;
+            const loanYears = parseInt(document.getElementById('loanYears').value);
+            
+            const providentMonthRate = providentYearRate / 12;
+            const commercialMonthRate = commercialYearRate / 12;
+            const totalMonths = loanYears * 12;
+
+            calculateEqualPayment(providentLoanAmount, providentMonthRate, commercialLoanAmount, commercialMonthRate, totalMonths);
+            calculateEqualPrincipal(providentLoanAmount, providentMonthRate, commercialLoanAmount, commercialMonthRate, totalMonths);
+            calculateInterestDiff(providentLoanAmount, providentMonthRate, commercialLoanAmount, commercialMonthRate, totalMonths);
+            
+            document.getElementById('results').style.display = 'block';
+        });
+
+        function calculateEqualPayment(providentLoanAmount, providentMonthRate, commercialLoanAmount, commercialMonthRate, totalMonths) {
+            const providentMonthlyPayment = providentLoanAmount > 0 ? providentLoanAmount * providentMonthRate * Math.pow(1 + providentMonthRate, totalMonths) / 
+                                 (Math.pow(1 + providentMonthRate, totalMonths) - 1) : 0;
+            const commercialMonthlyPayment = commercialLoanAmount > 0 ? commercialLoanAmount * commercialMonthRate * Math.pow(1 + commercialMonthRate, totalMonths) / 
+                                 (Math.pow(1 + commercialMonthRate, totalMonths) - 1) : 0;
+            
+            let providentRemainingPrincipal = providentLoanAmount;
+            let commercialRemainingPrincipal = commercialLoanAmount;
+            let html = '';
+            
+            for (let i = 1; i <= totalMonths; i++) {
+                const providentInterest = providentRemainingPrincipal * providentMonthRate;
+                const providentPrincipal = providentMonthlyPayment - providentInterest;
+                providentRemainingPrincipal -= providentPrincipal;
+
+                const commercialInterest = commercialRemainingPrincipal * commercialMonthRate;
+                const commercialPrincipal = commercialMonthlyPayment - commercialInterest;
+                commercialRemainingPrincipal -= commercialPrincipal;
+                
+                html += `<tr>
+                    <td>${i}</td>
+                    <td>${(providentMonthlyPayment + commercialMonthlyPayment).toFixed(2)}</td>
+                    <td>${(providentPrincipal + commercialPrincipal).toFixed(2)}</td>
+                    <td>${(providentInterest + commercialInterest).toFixed(2)}</td>
+                    <td>${Math.max(0, providentRemainingPrincipal + commercialRemainingPrincipal).toFixed(2)}</td>
+                </tr>`;
+            }
+            
+            document.getElementById('equalPaymentTable').innerHTML = html;
+        }
+
+        function calculateEqualPrincipal(providentLoanAmount, providentMonthRate, commercialLoanAmount, commercialMonthRate, totalMonths) {
+            const providentMonthlyPrincipal = providentLoanAmount / totalMonths;
+            const commercialMonthlyPrincipal = commercialLoanAmount / totalMonths;
+            let providentRemainingPrincipal = providentLoanAmount;
+            let commercialRemainingPrincipal = commercialLoanAmount;
+            let html = '';
+            
+            for (let i = 1; i <= totalMonths; i++) {
+                const providentInterest = providentRemainingPrincipal * providentMonthRate;
+                const providentMonthlyPayment = providentMonthlyPrincipal + providentInterest;
+                providentRemainingPrincipal -= providentMonthlyPrincipal;
+
+                const commercialInterest = commercialRemainingPrincipal * commercialMonthRate;
+                const commercialMonthlyPayment = commercialMonthlyPrincipal + commercialInterest;
+                commercialRemainingPrincipal -= commercialMonthlyPrincipal;
+                
+                html += `<tr>
+                    <td>${i}</td>
+                    <td>${(providentMonthlyPayment + commercialMonthlyPayment).toFixed(2)}</td>
+                    <td>${(providentMonthlyPrincipal + commercialMonthlyPrincipal).toFixed(2)}</td>
+                    <td>${(providentInterest + commercialInterest).toFixed(2)}</td>
+                    <td>${Math.max(0, providentRemainingPrincipal + commercialRemainingPrincipal).toFixed(2)}</td>
+                </tr>`;
+            }
+            
+            document.getElementById('equalPrincipalTable').innerHTML = html;
+        }
+
+        function calculateInterestDiff(providentLoanAmount, providentMonthRate, commercialLoanAmount, commercialMonthRate, totalMonths) {
+            const providentEqualPaymentMonthly = providentLoanAmount > 0 ? providentLoanAmount * providentMonthRate * Math.pow(1 + providentMonthRate, totalMonths) / 
+                                     (Math.pow(1 + providentMonthRate, totalMonths) - 1) : 0;
+            const commercialEqualPaymentMonthly = commercialLoanAmount > 0 ? commercialLoanAmount * commercialMonthRate * Math.pow(1 + commercialMonthRate, totalMonths) / 
+                                     (Math.pow(1 + commercialMonthRate, totalMonths) - 1) : 0;
+
+            const providentMonthlyPrincipal = providentLoanAmount / totalMonths;
+            const commercialMonthlyPrincipal = commercialLoanAmount / totalMonths;
+            
+            let equalPaymentProvidentRemaining = providentLoanAmount;
+            let equalPaymentCommercialRemaining = commercialLoanAmount;
+            let equalPrincipalProvidentRemaining = providentLoanAmount;
+            let equalPrincipalCommercialRemaining = commercialLoanAmount;
+            let equalPaymentTotalInterest = 0;
+            let equalPrincipalTotalInterest = 0;
+            let html = '';
+            
+            for (let i = 1; i <= totalMonths; i++) {
+                const equalPaymentProvidentInterest = equalPaymentProvidentRemaining * providentMonthRate;
+                const equalPaymentProvidentPrincipal = providentEqualPaymentMonthly - equalPaymentProvidentInterest;
+                equalPaymentProvidentRemaining -= equalPaymentProvidentPrincipal;
+
+                const equalPaymentCommercialInterest = equalPaymentCommercialRemaining * commercialMonthRate;
+                const equalPaymentCommercialPrincipal = commercialEqualPaymentMonthly - equalPaymentCommercialInterest;
+                equalPaymentCommercialRemaining -= equalPaymentCommercialPrincipal;
+
+                equalPaymentTotalInterest += equalPaymentProvidentInterest + equalPaymentCommercialInterest;
+                
+                const equalPrincipalProvidentInterest = equalPrincipalProvidentRemaining * providentMonthRate;
+                equalPrincipalProvidentRemaining -= providentMonthlyPrincipal;
+
+                const equalPrincipalCommercialInterest = equalPrincipalCommercialRemaining * commercialMonthRate;
+                equalPrincipalCommercialRemaining -= commercialMonthlyPrincipal;
+
+                equalPrincipalTotalInterest += equalPrincipalProvidentInterest + equalPrincipalCommercialInterest;
+                
+                const interestDiff = equalPaymentTotalInterest - equalPrincipalTotalInterest;
+                
+                html += `<tr>
+                    <td>${i}</td>
+                    <td>${equalPaymentTotalInterest.toFixed(2)}</td>
+                    <td>${equalPrincipalTotalInterest.toFixed(2)}</td>
+                    <td>${interestDiff.toFixed(2)}</td>
+                </tr>`;
+            }
+            
+            document.getElementById('interestDiffTable').innerHTML = html;
+        }
+    </script>
+</body>
+</html>
